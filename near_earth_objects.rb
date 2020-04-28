@@ -27,12 +27,13 @@ class NearEarthObjects
     )
   end
 
-  def self.asteroids_list_data
+  def self.asteroids_data
     conn.get('/neo/rest/v1/feed').body
   end
 
   def self.parsed_asteroids_data
-    JSON.parse(asteroids_list_data, symbolize_names: true)[:near_earth_objects][:"#{@@date}"]
+    data = JSON.parse(asteroids_data, symbolize_names: true)
+    data[:near_earth_objects][:"#{@@date}"]
   end
 
   def self.total_number_of_astroids
@@ -41,16 +42,24 @@ class NearEarthObjects
 
   def self.largest_astroid_diameter
     parsed_asteroids_data.map do |astroid|
-      astroid[:estimated_diameter][:feet][:estimated_diameter_max].to_i
+      asteroid_diameter(astroid).to_i
     end.max { |a,b| a<=> b}
+  end
+
+  def self.asteroid_diameter(astroid)
+    astroid[:estimated_diameter][:feet][:estimated_diameter_max]
+  end
+
+  def self.asteroid_miss_distance(astroid)
+    astroid[:close_approach_data][0][:miss_distance][:miles]
   end
 
   def self.astroid_list
     parsed_asteroids_data.map do |astroid|
     {
       name: astroid[:name],
-      diameter: "#{astroid[:estimated_diameter][:feet][:estimated_diameter_max].to_i} ft",
-      miss_distance: "#{astroid[:close_approach_data][0][:miss_distance][:miles].to_i} miles"
+      diameter: "#{asteroid_diameter(astroid).to_i} ft",
+      miss_distance: "#{asteroid_miss_distance(astroid).to_i} miles"
     }
     end
   end
